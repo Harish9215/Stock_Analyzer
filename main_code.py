@@ -4,6 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
+from pandas.tseries.offsets import BDay
 
 # Function to get stock data from Yahoo Finance
 def get_stock_data(ticker, period="6mo", interval="1d"):
@@ -51,9 +52,16 @@ if ticker:
         model = xgb.XGBRegressor(n_estimators=100, learning_rate=0.1, objective="reg:squarederror")
         model.fit(X_train, y_train)
 
+        # Get the last date from the stock data
+        last_date = data.index[-1]
+
+        # Calculate next trading day (skipping weekends)
+        next_trading_date = last_date + BDay(1)
+        next_trading_date = next_trading_date.strftime('%Y-%m-%d')  # Convert to readable format
+
         # Predict next day's closing price
         predicted_price = model.predict(X.iloc[-1:].values)[0]
-        st.write(f"📌 **Predicted Next Day Closing Price:** ${predicted_price:.2f}")
+        st.write(f"📌 **Predicted Closing Price for {next_trading_date}:** ${predicted_price:.2f}")
 
         # Buy/Sell/Hold Decision
         last_price = data["Close"].iloc[-1]
@@ -65,4 +73,4 @@ if ticker:
         else:
             decision = "HOLD ⚠️"
 
-        st.write(f"📊 **Suggested Action:** {decision}")
+        st.write(f"📊 **Suggested Action for {next_trading_date}:** {decision}")
